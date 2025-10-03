@@ -1,6 +1,7 @@
 import express, { type Request, type Response, type Express } from 'express';
 import { Server } from 'jayson';
 import { createFilesystemTool } from './tools/filesystem/index.js';
+import { createGitHubTool } from './tools/github/index.js';
 
 const app: Express = express();
 const PORT = process.env['PORT'] || 3000;
@@ -11,6 +12,14 @@ const filesystemTool = createFilesystemTool({
   deniedPaths: process.env['DENIED_PATHS']?.split(',') || ['/etc', '/usr/bin', '/System'],
   maxFileSize: parseInt(process.env['MAX_FILE_SIZE'] || '10485760', 10), // 10MB default
   streamThreshold: parseInt(process.env['STREAM_THRESHOLD'] || '1048576', 10), // 1MB default
+});
+
+// Create GitHub tool with configuration from environment
+const githubTool = createGitHubTool({
+  dryRunMode: process.env['GITHUB_DRY_RUN'] === 'true',
+  auditLog: process.env['GITHUB_AUDIT_LOG'] !== 'false', // Enabled by default
+  maxRequestsPerMinute: parseInt(process.env['GITHUB_RATE_LIMIT'] || '60', 10),
+  allowedOperations: process.env['GITHUB_ALLOWED_OPS']?.split(',') as any || [],
 });
 
 app.use(express.json());
@@ -126,6 +135,103 @@ const rpcServer = new Server({
             required: ['pattern'],
           },
         },
+        {
+          name: 'github.issue.create',
+          description: 'Create a new GitHub issue with audit trail and dry-run support',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              title: { type: 'string', description: 'Issue title' },
+              body: { type: 'string', description: 'Issue body (optional)' },
+              labels: { type: 'array', items: { type: 'string' }, description: 'Labels (optional)' },
+              assignees: { type: 'array', items: { type: 'string' }, description: 'Assignees (optional)' },
+              milestone: { type: 'number', description: 'Milestone number (optional)' },
+              dryRun: { type: 'boolean', default: false, description: 'Preview without executing' },
+            },
+            required: ['title'],
+          },
+        },
+        {
+          name: 'github.issue.update',
+          description: 'Update an existing GitHub issue',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              issueNumber: { type: 'number', description: 'Issue number' },
+              title: { type: 'string', description: 'New title (optional)' },
+              body: { type: 'string', description: 'New body (optional)' },
+              state: { type: 'string', enum: ['open', 'closed'], description: 'Issue state (optional)' },
+              labels: { type: 'array', items: { type: 'string' }, description: 'Labels (optional)' },
+              assignees: { type: 'array', items: { type: 'string' }, description: 'Assignees (optional)' },
+              milestone: { type: ['number', 'null'], description: 'Milestone (optional, null to remove)' },
+              dryRun: { type: 'boolean', default: false, description: 'Preview without executing' },
+            },
+            required: ['issueNumber'],
+          },
+        },
+        {
+          name: 'github.issue.comment',
+          description: 'Add a comment to a GitHub issue or PR',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              issueNumber: { type: 'number', description: 'Issue or PR number' },
+              body: { type: 'string', description: 'Comment body' },
+              dryRun: { type: 'boolean', default: false, description: 'Preview without executing' },
+            },
+            required: ['issueNumber', 'body'],
+          },
+        },
+        {
+          name: 'github.issue.list',
+          description: 'List GitHub issues with filters',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              state: { type: 'string', enum: ['open', 'closed', 'all'], default: 'open' },
+              labels: { type: 'array', items: { type: 'string' }, description: 'Filter by labels' },
+              assignee: { type: 'string', description: 'Filter by assignee' },
+              milestone: { type: ['number', 'string'], description: 'Filter by milestone' },
+              sort: { type: 'string', enum: ['created', 'updated', 'comments'], default: 'created' },
+              direction: { type: 'string', enum: ['asc', 'desc'], default: 'desc' },
+              per_page: { type: 'number', default: 30, minimum: 1, maximum: 100 },
+              page: { type: 'number', default: 1, minimum: 1 },
+            },
+          },
+        },
+        {
+          name: 'github.pr.create',
+          description: 'Create a new GitHub pull request',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              title: { type: 'string', description: 'PR title' },
+              body: { type: 'string', description: 'PR body (optional)' },
+              head: { type: 'string', description: 'Head branch name' },
+              base: { type: 'string', default: 'main', description: 'Base branch name' },
+              draft: { type: 'boolean', default: false, description: 'Create as draft' },
+              labels: { type: 'array', items: { type: 'string' }, description: 'Labels (optional)' },
+              assignees: { type: 'array', items: { type: 'string' }, description: 'Assignees (optional)' },
+              milestone: { type: 'number', description: 'Milestone number (optional)' },
+              dryRun: { type: 'boolean', default: false, description: 'Preview without executing' },
+            },
+            required: ['title', 'head'],
+          },
+        },
+        {
+          name: 'github.labels.manage',
+          description: 'Add, remove, or set labels on an issue or PR',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              issueNumber: { type: 'number', description: 'Issue or PR number' },
+              labels: { type: 'array', items: { type: 'string' }, description: 'Labels to manage' },
+              action: { type: 'string', enum: ['add', 'remove', 'set'], description: 'Action to perform' },
+              dryRun: { type: 'boolean', default: false, description: 'Preview without executing' },
+            },
+            required: ['issueNumber', 'labels', 'action'],
+          },
+        },
       ],
     });
   },
@@ -156,6 +262,36 @@ const rpcServer = new Server({
         }
         case 'filesystem.search': {
           const result = await filesystemTool.operations.search(toolArgs as any);
+          callback(result.success ? null : new Error(result.error), result);
+          break;
+        }
+        case 'github.issue.create': {
+          const result = await githubTool.operations.createIssue(toolArgs as any);
+          callback(result.success ? null : new Error(result.error), result);
+          break;
+        }
+        case 'github.issue.update': {
+          const result = await githubTool.operations.updateIssue(toolArgs as any);
+          callback(result.success ? null : new Error(result.error), result);
+          break;
+        }
+        case 'github.issue.comment': {
+          const result = await githubTool.operations.createComment(toolArgs as any);
+          callback(result.success ? null : new Error(result.error), result);
+          break;
+        }
+        case 'github.issue.list': {
+          const result = await githubTool.operations.listIssues(toolArgs as any);
+          callback(result.success ? null : new Error(result.error), result);
+          break;
+        }
+        case 'github.pr.create': {
+          const result = await githubTool.operations.createPullRequest(toolArgs as any);
+          callback(result.success ? null : new Error(result.error), result);
+          break;
+        }
+        case 'github.labels.manage': {
+          const result = await githubTool.operations.manageLabels(toolArgs as any);
           callback(result.success ? null : new Error(result.error), result);
           break;
         }
