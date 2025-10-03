@@ -4,7 +4,7 @@ AI agent orchestration platform with Model Context Protocol (MCP) support.
 
 ## Overview
 
-Jesus is a polyglot monorepo for building and orchestrating AI agents. It provides MCP-compliant server infrastructure with built-in tools for filesystem operations, GitHub integration, and test execution.
+Jesus is a polyglot monorepo for building and orchestrating AI agents. It provides MCP-compliant server infrastructure for agent communication.
 
 ## Project Structure
 
@@ -12,6 +12,8 @@ Jesus is a polyglot monorepo for building and orchestrating AI agents. It provid
 ├── apps/              # Application services
 │   └── mcp-server/   # MCP protocol server with HTTP + JSON-RPC
 ├── packages/         # Shared libraries
+│   ├── logging/      # Centralized JSON logging with PII redaction
+│   └── types/        # Shared TypeScript types and interfaces
 ├── infra/            # Infrastructure and deployment configs
 ├── tools/            # Build and development tools
 ├── docs/             # Project documentation
@@ -44,10 +46,11 @@ pnpm test
 The MCP server (`apps/mcp-server`) provides a Model Context Protocol implementation with:
 
 - **JSON-RPC 2.0** endpoints for agent communication
-- **Filesystem tools** for file read/write/search operations
-- **GitHub integration** via gh CLI for issue and PR management
-- **Test runner** supporting vitest, jest, pytest, and go test
-- **Health checks** for Kubernetes deployments
+- **MCP protocol methods**: initialize, resources/list, prompts/list, tools/list
+- **Health checks** for Kubernetes deployments (`/healthz`, `/readyz`)
+- **Capabilities discovery** via `/capabilities` endpoint
+
+> **Note**: Tool implementations (filesystem, GitHub, test runner) are planned for future releases.
 
 See [apps/mcp-server/README.md](apps/mcp-server/README.md) for details.
 

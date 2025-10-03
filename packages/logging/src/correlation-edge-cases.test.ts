@@ -448,7 +448,7 @@ describe('CorrelationManager - Edge Cases', () => {
 
   describe('Concurrency and Race Conditions', () => {
     it('should maintain separate contexts in concurrent operations', async () => {
-      const results: Array<{ id: string; value: string }> = [];
+      const results: { id: string; value: string }[] = [];
 
       const createTask = (id: string, delay: number) => {
         return CorrelationManager.run({ correlationId: id }, async () => {
@@ -473,7 +473,7 @@ describe('CorrelationManager - Edge Cases', () => {
     });
 
     it('should handle rapid context switching', () => {
-      const contexts: Array<string | undefined> = [];
+      const contexts: (string | undefined)[] = [];
 
       for (let i = 0; i < 100; i++) {
         CorrelationManager.run({ correlationId: `id-${i}` }, () => {

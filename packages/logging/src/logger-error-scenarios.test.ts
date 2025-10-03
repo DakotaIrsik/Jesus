@@ -27,7 +27,7 @@ class TestStream extends Writable {
     return lastLog ? JSON.parse(lastLog) : {};
   }
 
-  getAllLogs(): Array<Record<string, unknown>> {
+  getAllLogs(): Record<string, unknown>[] {
     return this.logs.map((log) => JSON.parse(log));
   }
 

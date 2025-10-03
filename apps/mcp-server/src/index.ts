@@ -68,11 +68,9 @@ const rpcServer = new Server({
 // JSON-RPC endpoint
 app.post('/rpc', (req: Request, res: Response) => {
   rpcServer.call(req.body, (error: Error | null, response: unknown) => {
-    if (error) {
-      res.status(500).json({ error: error.message });
-      return;
-    }
-    res.json(response);
+    // Jayson handles JSON-RPC errors internally and includes them in the response
+    // Always return 200 for valid HTTP requests, errors are in the JSON-RPC response body
+    res.status(200).json(response || { error: error?.message });
   });
 });
 
