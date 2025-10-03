@@ -1,0 +1,21 @@
+{
+  "id": "test-graph-6",
+  "name": "Failure Test",
+  "nodes": [
+    {
+      "id": "task-1",
+      "name": "Failing Task",
+      "type": "test",
+      "payload": {},
+      "dependencies": [],
+      "maxRetries": 2,
+      "retryCount": 3,
+      "status": "failed",
+      "startedAt": "2025-10-03T03:38:00.717Z",
+      "error": "Persistent failure",
+      "completedAt": "2025-10-03T03:38:00.761Z"
+    }
+  ],
+  "createdAt": "2025-10-03T03:38:00.717Z",
+  "updatedAt": "2025-10-03T03:38:00.763Z"
+}

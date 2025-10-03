@@ -1,0 +1,23 @@
+{
+  "id": "test-graph-5",
+  "name": "Retry Test",
+  "nodes": [
+    {
+      "id": "task-1",
+      "name": "Flaky Task",
+      "type": "test",
+      "payload": {},
+      "dependencies": [],
+      "maxRetries": 3,
+      "retryCount": 2,
+      "status": "completed",
+      "startedAt": "2025-10-03T03:38:00.667Z",
+      "result": {
+        "success": true
+      },
+      "completedAt": "2025-10-03T03:38:00.714Z"
+    }
+  ],
+  "createdAt": "2025-10-03T03:38:00.667Z",
+  "updatedAt": "2025-10-03T03:38:00.716Z"
+}

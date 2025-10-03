@@ -1,0 +1,38 @@
+{
+  "id": "test-graph-8",
+  "name": "Resume Test",
+  "nodes": [
+    {
+      "id": "task-1",
+      "name": "Task 1",
+      "type": "test",
+      "payload": {},
+      "dependencies": [],
+      "maxRetries": 3,
+      "retryCount": 0,
+      "status": "completed",
+      "result": {
+        "completed": true
+      }
+    },
+    {
+      "id": "task-2",
+      "name": "Task 2",
+      "type": "test",
+      "payload": {},
+      "dependencies": [
+        "task-1"
+      ],
+      "maxRetries": 3,
+      "retryCount": 0,
+      "status": "completed",
+      "startedAt": "2025-10-03T03:38:00.782Z",
+      "result": {
+        "success": true
+      },
+      "completedAt": "2025-10-03T03:38:00.782Z"
+    }
+  ],
+  "createdAt": "2025-10-03T03:38:00.780Z",
+  "updatedAt": "2025-10-03T03:38:00.783Z"
+}

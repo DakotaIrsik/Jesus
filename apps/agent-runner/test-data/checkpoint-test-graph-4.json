@@ -1,0 +1,55 @@
+{
+  "graphId": "test-graph-4",
+  "timestamp": "2025-10-03T03:38:00.664Z",
+  "nodes": [
+    {
+      "id": "task-1",
+      "name": "Task 1",
+      "type": "test",
+      "payload": {},
+      "dependencies": [],
+      "maxRetries": 3,
+      "retryCount": 0,
+      "status": "completed",
+      "startedAt": "2025-10-03T03:38:00.659Z",
+      "result": {
+        "success": true
+      },
+      "completedAt": "2025-10-03T03:38:00.660Z"
+    },
+    {
+      "id": "task-2",
+      "name": "Task 2",
+      "type": "test",
+      "payload": {},
+      "dependencies": [
+        "task-1"
+      ],
+      "maxRetries": 3,
+      "retryCount": 0,
+      "status": "completed",
+      "startedAt": "2025-10-03T03:38:00.661Z",
+      "result": {
+        "success": true
+      },
+      "completedAt": "2025-10-03T03:38:00.662Z"
+    },
+    {
+      "id": "task-3",
+      "name": "Task 3",
+      "type": "test",
+      "payload": {},
+      "dependencies": [
+        "task-2"
+      ],
+      "maxRetries": 3,
+      "retryCount": 0,
+      "status": "completed",
+      "startedAt": "2025-10-03T03:38:00.663Z",
+      "result": {
+        "success": true
+      },
+      "completedAt": "2025-10-03T03:38:00.664Z"
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "id": "test-graph-7",
+  "name": "Checkpoint Test",
+  "nodes": [
+    {
+      "id": "task-1",
+      "name": "Task 1",
+      "type": "test",
+      "payload": {},
+      "dependencies": [],
+      "maxRetries": 3,
+      "retryCount": 0,
+      "status": "completed",
+      "startedAt": "2025-10-03T03:38:00.773Z",
+      "result": {
+        "success": true
+      },
+      "completedAt": "2025-10-03T03:38:00.774Z"
+    },
+    {
+      "id": "task-2",
+      "name": "Task 2",
+      "type": "test",
+      "payload": {},
+      "dependencies": [
+        "task-1"
+      ],
+      "maxRetries": 3,
+      "retryCount": 0,
+      "status": "completed",
+      "startedAt": "2025-10-03T03:38:00.776Z",
+      "result": {
+        "success": true
+      },
+      "completedAt": "2025-10-03T03:38:00.776Z"
+    }
+  ],
+  "createdAt": "2025-10-03T03:38:00.772Z",
+  "updatedAt": "2025-10-03T03:38:00.778Z"
+}

@@ -1,0 +1,21 @@
+{
+  "graphId": "test-graph-5",
+  "timestamp": "2025-10-03T03:38:00.715Z",
+  "nodes": [
+    {
+      "id": "task-1",
+      "name": "Flaky Task",
+      "type": "test",
+      "payload": {},
+      "dependencies": [],
+      "maxRetries": 3,
+      "retryCount": 2,
+      "status": "completed",
+      "startedAt": "2025-10-03T03:38:00.667Z",
+      "result": {
+        "success": true
+      },
+      "completedAt": "2025-10-03T03:38:00.714Z"
+    }
+  ]
+}

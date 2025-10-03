@@ -1,0 +1,40 @@
+{
+  "id": "test-graph-1",
+  "name": "Valid DAG",
+  "nodes": [
+    {
+      "id": "task-1",
+      "name": "Task 1",
+      "type": "test",
+      "payload": {},
+      "dependencies": [],
+      "maxRetries": 3,
+      "retryCount": 0,
+      "status": "completed",
+      "startedAt": "2025-10-03T03:38:00.646Z",
+      "result": {
+        "success": true
+      },
+      "completedAt": "2025-10-03T03:38:00.647Z"
+    },
+    {
+      "id": "task-2",
+      "name": "Task 2",
+      "type": "test",
+      "payload": {},
+      "dependencies": [
+        "task-1"
+      ],
+      "maxRetries": 3,
+      "retryCount": 0,
+      "status": "completed",
+      "startedAt": "2025-10-03T03:38:00.649Z",
+      "result": {
+        "success": true
+      },
+      "completedAt": "2025-10-03T03:38:00.649Z"
+    }
+  ],
+  "createdAt": "2025-10-03T03:38:00.643Z",
+  "updatedAt": "2025-10-03T03:38:00.650Z"
+}
