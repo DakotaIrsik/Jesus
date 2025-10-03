@@ -1,0 +1,10 @@
+# Core Python dependencies
+# This file is managed by uv for cross-workspace compatibility
+# Individual apps/packages should define their own dependencies
+
+# Development tools (installed at root level)
+ruff>=0.8.0
+mypy>=1.13.0
+black>=24.0.0
+pytest>=8.0.0
+pytest-cov>=6.0.0
