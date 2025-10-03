@@ -1,9 +1,17 @@
-import express, { type Request, type Response } from 'express';
+import express, { type Request, type Response, type Express } from 'express';
 import { Server } from 'jayson';
-import { z } from 'zod';
+import { createFilesystemTool } from './tools/filesystem/index.js';
 
-const app = express();
-const PORT = process.env.PORT || 3000;
+const app: Express = express();
+const PORT = process.env['PORT'] || 3000;
+
+// Create filesystem tool with configuration from environment
+const filesystemTool = createFilesystemTool({
+  allowedPaths: process.env['ALLOWED_PATHS']?.split(',') || [],
+  deniedPaths: process.env['DENIED_PATHS']?.split(',') || ['/etc', '/usr/bin', '/System'],
+  maxFileSize: parseInt(process.env['MAX_FILE_SIZE'] || '10485760', 10), // 10MB default
+  streamThreshold: parseInt(process.env['STREAM_THRESHOLD'] || '1048576', 10), // 1MB default
+});
 
 app.use(express.json());
 
@@ -62,7 +70,101 @@ const rpcServer = new Server({
   },
 
   'tools/list': (_args: unknown, callback: (error: Error | null, result?: unknown) => void) => {
-    callback(null, { tools: [] });
+    callback(null, {
+      tools: [
+        {
+          name: 'filesystem.read',
+          description: 'Read file contents with security guardrails',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              path: { type: 'string', description: 'Path to file' },
+              encoding: { type: 'string', enum: ['utf8', 'binary'], default: 'utf8' },
+            },
+            required: ['path'],
+          },
+        },
+        {
+          name: 'filesystem.write',
+          description: 'Write file contents with path protection and size limits',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              path: { type: 'string', description: 'Path to file' },
+              content: { type: 'string', description: 'File content' },
+              encoding: { type: 'string', enum: ['utf8', 'binary'], default: 'utf8' },
+              createDirs: { type: 'boolean', default: false, description: 'Create parent directories' },
+            },
+            required: ['path', 'content'],
+          },
+        },
+        {
+          name: 'filesystem.patch',
+          description: 'Apply unified diff patch with rollback support',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              path: { type: 'string', description: 'Path to file' },
+              patch: { type: 'string', description: 'Unified diff patch' },
+              dryRun: { type: 'boolean', default: false, description: 'Preview without applying' },
+            },
+            required: ['path', 'patch'],
+          },
+        },
+        {
+          name: 'filesystem.search',
+          description: 'Search for code patterns with ripgrep-like functionality',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              pattern: { type: 'string', description: 'Search pattern (regex)' },
+              path: { type: 'string', description: 'Search path (optional)' },
+              filePattern: { type: 'string', description: 'File pattern filter (optional)' },
+              maxResults: { type: 'number', default: 100, description: 'Max results' },
+              caseSensitive: { type: 'boolean', default: true, description: 'Case sensitive' },
+            },
+            required: ['pattern'],
+          },
+        },
+      ],
+    });
+  },
+
+  // Filesystem tool implementations
+  'tools/call': async (
+    args: { name: string; arguments: Record<string, unknown> },
+    callback: (error: Error | null, result?: unknown) => void
+  ) => {
+    try {
+      const { name, arguments: toolArgs } = args;
+
+      switch (name) {
+        case 'filesystem.read': {
+          const result = await filesystemTool.operations.readFile(toolArgs as any);
+          callback(result.success ? null : new Error(result.error), result);
+          break;
+        }
+        case 'filesystem.write': {
+          const result = await filesystemTool.operations.writeFile(toolArgs as any);
+          callback(result.success ? null : new Error(result.error), result);
+          break;
+        }
+        case 'filesystem.patch': {
+          const result = await filesystemTool.operations.applyPatch(toolArgs as any);
+          callback(result.success ? null : new Error(result.error), result);
+          break;
+        }
+        case 'filesystem.search': {
+          const result = await filesystemTool.operations.search(toolArgs as any);
+          callback(result.success ? null : new Error(result.error), result);
+          break;
+        }
+        default:
+          callback(new Error(`Unknown tool: ${name}`));
+      }
+    } catch (error) {
+      callback(error as Error);
+    }
   },
 });
 
