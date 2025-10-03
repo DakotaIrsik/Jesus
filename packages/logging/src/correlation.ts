@@ -50,10 +50,16 @@ export function generateCorrelationId(): string {
  */
 export function correlationMiddleware() {
   return (req: any, res: any, next: any) => {
-    const correlationId =
+    let correlationId =
       req.headers['x-correlation-id'] ||
-      req.headers['x-request-id'] ||
-      generateCorrelationId();
+      req.headers['x-request-id'];
+
+    // Handle array header values - generate new ID if header is an array
+    if (Array.isArray(correlationId)) {
+      correlationId = generateCorrelationId();
+    } else if (!correlationId) {
+      correlationId = generateCorrelationId();
+    }
 
     const context: CorrelationContext = {
       correlationId: correlationId as string,
@@ -100,4 +106,61 @@ export function correlationPlugin(fastify: any, _opts: any, done: any) {
   });
 
   done();
+}
+
+/**
+ * CorrelationManager provides a class-based API for managing correlation contexts
+ */
+export class CorrelationManager {
+  /**
+   * Generate a new correlation ID
+   */
+  static generateId(): string {
+    return generateCorrelationId();
+  }
+
+  /**
+   * Get the current correlation context
+   */
+  static getContext(): CorrelationContext | undefined {
+    return getCorrelationContext();
+  }
+
+  /**
+   * Get the current correlation ID
+   */
+  static getCorrelationId(): string | undefined {
+    return getCorrelationContext()?.correlationId;
+  }
+
+  /**
+   * Run a function with a correlation context
+   */
+  static run<T>(context: Partial<CorrelationContext>, fn: () => T): T {
+    return runWithCorrelationContext(context, fn);
+  }
+
+  /**
+   * Set correlation context properties
+   */
+  static set(context: CorrelationContext): void {
+    setCorrelationContext(context);
+  }
+
+  /**
+   * Set correlation context properties (alias for set)
+   */
+  static setContext(context: Partial<CorrelationContext>): void {
+    const store = asyncLocalStorage.getStore();
+    if (store) {
+      Object.assign(store, context);
+    }
+  }
+
+  /**
+   * Get Express middleware for correlation context
+   */
+  static middleware() {
+    return correlationMiddleware();
+  }
 }

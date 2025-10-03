@@ -11,12 +11,14 @@ export {
   generateCorrelationId,
   correlationMiddleware,
   correlationPlugin,
+  CorrelationManager,
 } from './correlation.js';
 export {
   redactString,
   redactObject,
   deepRedact,
   DEFAULT_REDACTION_RULES,
+  RedactionService,
 } from './redaction.js';
 export type {
   LogLevel,

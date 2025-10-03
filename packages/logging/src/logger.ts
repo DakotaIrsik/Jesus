@@ -217,8 +217,9 @@ export class Logger {
    */
   child(bindings: LogMetadata): Logger {
     const childLogger = new Logger(this.config);
+    const safeBindings = bindings || {};
     childLogger.pinoLogger = this.pinoLogger.child(
-      this.redactMetadata(bindings),
+      this.redactMetadata(safeBindings),
     );
     return childLogger;
   }
