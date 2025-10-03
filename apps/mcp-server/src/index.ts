@@ -2,6 +2,7 @@ import express, { type Request, type Response, type Express } from 'express';
 import { Server } from 'jayson';
 import { createFilesystemTool } from './tools/filesystem/index.js';
 import { createGitHubTool } from './tools/github/index.js';
+import { createTestRunnerTool } from './tools/testrunner/index.js';
 
 const app: Express = express();
 const PORT = process.env['PORT'] || 3000;
@@ -20,6 +21,14 @@ const githubTool = createGitHubTool({
   auditLog: process.env['GITHUB_AUDIT_LOG'] !== 'false', // Enabled by default
   maxRequestsPerMinute: parseInt(process.env['GITHUB_RATE_LIMIT'] || '60', 10),
   allowedOperations: process.env['GITHUB_ALLOWED_OPS']?.split(',') as any || [],
+});
+
+// Create test runner tool with configuration from environment
+const testRunnerTool = createTestRunnerTool({
+  defaultTimeout: parseInt(process.env['TEST_TIMEOUT'] || '300000', 10), // 5 minutes default
+  enableCoverage: process.env['TEST_COVERAGE'] !== 'false', // Enabled by default
+  maxRetries: parseInt(process.env['TEST_MAX_RETRIES'] || '2', 10),
+  allowedFrameworks: process.env['TEST_FRAMEWORKS']?.split(',') as any || ['jest', 'vitest', 'pytest', 'xunit'],
 });
 
 app.use(express.json());
@@ -232,6 +241,34 @@ const rpcServer = new Server({
             required: ['issueNumber', 'labels', 'action'],
           },
         },
+        {
+          name: 'testrunner.run',
+          description: 'Run tests with coverage collection and retry logic for multiple frameworks',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              framework: { type: 'string', enum: ['jest', 'vitest', 'pytest', 'xunit', 'mocha', 'ava'], description: 'Test framework to use' },
+              testPath: { type: 'string', description: 'Test path or pattern (optional)' },
+              args: { type: 'array', items: { type: 'string' }, default: [], description: 'Additional CLI arguments' },
+              coverage: { type: 'boolean', default: true, description: 'Enable coverage collection' },
+              timeout: { type: 'number', description: 'Timeout in milliseconds (optional)' },
+              retry: { type: 'boolean', default: true, description: 'Retry flaky tests' },
+              cwd: { type: 'string', description: 'Working directory (optional)' },
+            },
+            required: ['framework'],
+          },
+        },
+        {
+          name: 'testrunner.coverage',
+          description: 'Get test coverage report in various formats',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              format: { type: 'string', enum: ['json', 'lcov', 'html', 'text'], default: 'json', description: 'Coverage report format' },
+              outputPath: { type: 'string', description: 'Output path for coverage report (optional)' },
+            },
+          },
+        },
       ],
     });
   },
@@ -292,6 +329,16 @@ const rpcServer = new Server({
         }
         case 'github.labels.manage': {
           const result = await githubTool.operations.manageLabels(toolArgs as any);
+          callback(result.success ? null : new Error(result.error), result);
+          break;
+        }
+        case 'testrunner.run': {
+          const result = await testRunnerTool.operations.runTests(toolArgs as any);
+          callback(result.success ? null : new Error(result.error), result);
+          break;
+        }
+        case 'testrunner.coverage': {
+          const result = await testRunnerTool.operations.getCoverage(toolArgs as any);
           callback(result.success ? null : new Error(result.error), result);
           break;
         }
