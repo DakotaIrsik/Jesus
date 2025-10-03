@@ -134,9 +134,15 @@ describe('MCP Server', () => {
         jsonrpc: '2.0',
         id: 4,
         result: {
-          tools: [],
+          tools: expect.arrayContaining([
+            expect.objectContaining({ name: 'filesystem.read' }),
+            expect.objectContaining({ name: 'filesystem.write' }),
+            expect.objectContaining({ name: 'filesystem.patch' }),
+            expect.objectContaining({ name: 'filesystem.search' }),
+          ]),
         },
       });
+      expect(response.body.result.tools).toHaveLength(4);
     });
   });
 });
