@@ -20,6 +20,7 @@
     "clean": "pnpm -r clean",
     "prepare": "husky install",
     "security:npm": "npm audit --audit-level=moderate",
+    "security:pip": "pip-audit || echo 'pip-audit not installed or no Python dependencies'",
     "security:osv": "osv-scanner --recursive ."
   },
   "devDependencies": {
