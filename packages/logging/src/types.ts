@@ -27,9 +27,7 @@ export interface CorrelationContext {
 /**
  * Metadata that can be attached to log entries
  */
-export interface LogMetadata {
-  [key: string]: unknown;
-}
+export type LogMetadata = Record<string, unknown>;
 
 /**
  * Redaction rule for PII protection

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { Logger, createLogger } from './logger.js';
 import { runWithCorrelationContext } from './correlation.js';
 import { LogLevel } from './types.js';
