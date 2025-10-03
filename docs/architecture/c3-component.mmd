@@ -1,0 +1,135 @@
+graph TB
+    subgraph "Agent Runner Service (Detailed)"
+        subgraph "API Layer"
+            RunnerAPI[Runner API<br/>gRPC/REST<br/>Health Checks]
+        end
+
+        subgraph "Execution Engine"
+            TaskExecutor[Task Executor<br/>Goroutines/Workers]
+            RetryLogic[Retry Manager<br/>Exponential Backoff]
+            GraphResolver[Task Graph<br/>Dependency Resolution]
+        end
+
+        subgraph "State Management"
+            StateMachine[State Machine<br/>PENDING→RUNNING→DONE]
+            ContextMgr[Context Manager<br/>Timeouts/Cancellation]
+        end
+
+        subgraph "Integration Layer"
+            RouterClient[Router Client<br/>Model Selection]
+            MCPClient[MCP Client<br/>JSON-RPC 2.0]
+            ArtifactClient[Artifact Client<br/>Upload/Download]
+        end
+
+        subgraph "Observability"
+            MetricsCollector[Metrics Collector<br/>Prometheus]
+            TraceCollector[Trace Collector<br/>OpenTelemetry]
+            StructuredLogger[Structured Logger<br/>Correlation IDs]
+        end
+    end
+
+    subgraph "Model Router Service (Detailed)"
+        subgraph "Routing Engine"
+            RouteSelector[Route Selector<br/>Context Analysis]
+            FallbackHandler[Fallback Handler<br/>Chain Management]
+            LoadBalancer[Load Balancer<br/>Round-Robin/Weighted]
+        end
+
+        subgraph "Adapter Management"
+            AdapterRegistry[Adapter Registry<br/>Plugin Discovery]
+            HealthChecker[Health Checker<br/>Adapter Status]
+            RateLimiter[Rate Limiter<br/>Per-Provider Limits]
+        end
+
+        subgraph "Cost Tracking"
+            TokenCounter[Token Counter<br/>Prompt+Completion]
+            CostCalculator[Cost Calculator<br/>Provider Pricing]
+        end
+    end
+
+    subgraph "MCP Server (Detailed)"
+        subgraph "Protocol Layer"
+            JSONRPCHandler[JSON-RPC 2.0<br/>Request Handler]
+            ToolRegistry[Tool Registry<br/>Dynamic Discovery]
+        end
+
+        subgraph "Tool Implementations"
+            FSToolImpl[Filesystem Tools<br/>Path Guards<br/>Size Limits]
+            GHToolImpl[GitHub Tools<br/>Rate Limiting<br/>Audit Log]
+            TestToolImpl[Test Runner<br/>Multi-Framework<br/>Coverage]
+        end
+
+        subgraph "Security Layer"
+            PathValidator[Path Validator<br/>Traversal Prevention]
+            SecretScanner[Secret Scanner<br/>detect-secrets]
+        end
+    end
+
+    %% Runner Internal Flow
+    RunnerAPI --> TaskExecutor
+    TaskExecutor --> GraphResolver
+    TaskExecutor --> StateMachine
+    TaskExecutor --> RetryLogic
+    StateMachine --> ContextMgr
+
+    %% Runner to External Services
+    TaskExecutor --> RouterClient
+    TaskExecutor --> MCPClient
+    TaskExecutor --> ArtifactClient
+    TaskExecutor --> MetricsCollector
+    TaskExecutor --> TraceCollector
+    TaskExecutor --> StructuredLogger
+
+    %% Router Internal Flow
+    RouterClient --> RouteSelector
+    RouteSelector --> FallbackHandler
+    RouteSelector --> LoadBalancer
+    LoadBalancer --> AdapterRegistry
+    AdapterRegistry --> HealthChecker
+    LoadBalancer --> RateLimiter
+    RouterClient --> TokenCounter
+    TokenCounter --> CostCalculator
+
+    %% MCP Internal Flow
+    MCPClient --> JSONRPCHandler
+    JSONRPCHandler --> ToolRegistry
+    ToolRegistry --> FSToolImpl
+    ToolRegistry --> GHToolImpl
+    ToolRegistry --> TestToolImpl
+    FSToolImpl --> PathValidator
+    GHToolImpl --> PathValidator
+    FSToolImpl --> SecretScanner
+
+    %% External Dependencies
+    RouterClient -.->|Model Calls| ExternalAdapters[Model Adapters]
+    ArtifactClient -.->|Store/Retrieve| ExternalStorage[Artifact Storage]
+    MetricsCollector -.->|Push| ExternalMetrics[Prometheus]
+    TraceCollector -.->|Export| ExternalTracing[OTLP Collector]
+    StructuredLogger -.->|Ship| ExternalLogs[ELK/Cloud Logging]
+    GHToolImpl -.->|API Calls| ExternalGitHub[GitHub API]
+
+    classDef api fill:#4A90E2,stroke:#2E5C8A,color:#fff
+    classDef engine fill:#F5A623,stroke:#D68910,color:#fff
+    classDef state fill:#7ED321,stroke:#5FA019,color:#fff
+    classDef integration fill:#50E3C2,stroke:#35C9A8,color:#000
+    classDef observability fill:#BD10E0,stroke:#9012FE,color:#fff
+    classDef routing fill:#F8E71C,stroke:#D4C418,color:#000
+    classDef adapter fill:#9013FE,stroke:#7110CD,color:#fff
+    classDef cost fill:#D0021B,stroke:#A00116,color:#fff
+    classDef protocol fill:#B8E986,stroke:#9DD663,color:#000
+    classDef tools fill:#417505,stroke:#2D5103,color:#fff
+    classDef security fill:#8B572A,stroke:#704626,color:#fff
+    classDef external fill:#CCCCCC,stroke:#999999,color:#000
+
+    class RunnerAPI api
+    class TaskExecutor,RetryLogic,GraphResolver engine
+    class StateMachine,ContextMgr state
+    class RouterClient,MCPClient,ArtifactClient integration
+    class MetricsCollector,TraceCollector,StructuredLogger observability
+    class RouteSelector,FallbackHandler,LoadBalancer routing
+    class AdapterRegistry,HealthChecker,RateLimiter adapter
+    class TokenCounter,CostCalculator cost
+    class JSONRPCHandler,ToolRegistry protocol
+    class FSToolImpl,GHToolImpl,TestToolImpl tools
+    class PathValidator,SecretScanner security
+    class ExternalAdapters,ExternalStorage,ExternalMetrics,ExternalTracing,ExternalLogs,ExternalGitHub external
