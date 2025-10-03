@@ -466,7 +466,7 @@ export class GitHubOperations {
   /**
    * Get audit log entries
    */
-  getAuditLog(): ReadonlyArray<AuditEntry> {
+  getAuditLog(): readonly AuditEntry[] {
     return this.auditLog;
   }
 

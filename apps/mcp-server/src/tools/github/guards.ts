@@ -5,7 +5,7 @@ import type { GitHubConfig, RateLimitInfo } from './types.js';
  */
 export class GitHubGuard {
   private config: GitHubConfig;
-  private rateLimitTracker: Map<string, number[]> = new Map();
+  private rateLimitTracker = new Map<string, number[]>();
 
   constructor(config: GitHubConfig) {
     this.config = config;
