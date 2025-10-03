@@ -1,0 +1,27 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Run type checking
+echo "🔍 Running type checks..."
+pnpm type-check || exit 1
+
+# Run linting
+echo "🔍 Running ESLint..."
+pnpm lint:fix || exit 1
+
+# Run prettier
+echo "💅 Running Prettier..."
+pnpm format || exit 1
+
+# Run Python formatting (if Python files changed)
+if git diff --cached --name-only | grep -q '\.py$'; then
+  echo "🐍 Running Python formatters..."
+  ruff check --fix . || exit 1
+  black . || exit 1
+fi
+
+# Security checks
+echo "🔒 Running security scans..."
+pnpm security:npm || echo "⚠️  npm audit found vulnerabilities"
+
+echo "✅ Pre-commit checks passed!"
