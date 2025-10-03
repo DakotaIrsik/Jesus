@@ -1,0 +1,52 @@
+{
+  "name": "@jesus/logging",
+  "version": "0.1.0",
+  "description": "Centralized JSON logging with PII redaction and correlation IDs",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "src",
+    "package.json",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint src",
+    "type-check": "tsc --noEmit"
+  },
+  "keywords": [
+    "logging",
+    "logger",
+    "pii",
+    "redaction",
+    "correlation",
+    "structured-logging",
+    "json-logging"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "pino": "^9.5.0",
+    "pino-pretty": "^13.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5",
+    "typescript": "^5.7.3",
+    "vitest": "^2.1.8",
+    "chai": "^5.1.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

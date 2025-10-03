@@ -1,0 +1,169 @@
+title,markdownTitle,body,acceptance_criteria,labels,priority,depends_on,milestone
+EPIC: Program charter & architecture blueprint,EPIC: Program charter & architecture blueprint,"Create the high‑level vision, constraints, and architecture for an MCP‑based agentic AI platform that runs on dedicated hardware with pluggable models (local/remote), explicit fallback chains, and a full CI/CD/testing pipeline. Document goals, out‑of‑scope, SLAs, non‑functional requirements (NFRs), and risks. Produce a C4 diagram and an ADR index.","- [ ] Charter doc committed under /docs/charter.md (vision, scope, NFRs, SLAs, risks)
+- [ ] C4 model diagrams (C1–C3) in /docs/architecture/ with sources (PlantUML/Mermaid)
+- [ ] ADR 000-index and first 5 ADRs in /docs/adr/
+- [ ] Diagram shows model adapters, router/fallback, agent runner, eval, CI/CD, observability","epic,docs,architecture",P0,,M0
+Scaffold monorepo with polyglot workspaces,Scaffold monorepo with polyglot workspaces,"Initialize a monorepo supporting TypeScript (CLI, router, agent runner), Python (eval harness, adapters), and IaC (Terraform/Helm). Include package managers (pnpm + uv/pip) and consistent tooling.","- [ ] Repo initialized with .editorconfig, .gitattributes, .gitignore
+- [ ] /apps, /packages, /infra, /docs, /examples, /tools top-level layout
+- [ ] pnpm workspace + Python uv/pip constraints files
+- [ ] Conventional Commits + commitlint + semantic-release config","repo,tooling",P0,EPIC: Program charter & architecture blueprint,M0
+Set coding standards & pre-commit hooks,Set coding standards & pre-commit hooks,"Establish linting, formatting, type-checking and security static analysis. Enforce with Git hooks and CI.","- [ ] ESLint + TypeScript strict + tsconfig paths
+- [ ] Ruff/Black + MyPy (strict) for Python
+- [ ] Pre-commit with autofix (eslint, black, ruff, prettier, detect-secrets)
+- [ ] Supply Chain scans: npm audit, pip-audit, osv-scanner","quality,security,tooling",P1,Scaffold monorepo with polyglot workspaces,M0
+"License, contribution guide, code of conduct","License, contribution guide, code of conduct","Add license suited for commercial protection (e.g., BUSL-1.1 or SSPL) and CONTRIBUTING.md, SECURITY.md, CODE_OF_CONDUCT.md.","- [ ] LICENSE committed (selected in ADR)
+- [ ] CONTRIBUTING.md with local dev & test instructions
+- [ ] SECURITY.md with reporting/vuln disclosure
+- [ ] CODE_OF_CONDUCT.md","docs,legal",P1,EPIC: Program charter & architecture blueprint,M0
+Provisioner: NVIDIA drivers + CUDA + container runtime,Provisioner: NVIDIA drivers + CUDA + container runtime,"Automate setup for Linux/Windows/macOS builder/runner nodes with GPU. Use Ansible + scripts to install drivers, CUDA toolkit, and nvidia-container-toolkit.","- [ ] Ansible role + scripts under /infra/ansible/nodes-gpu
+- [ ] Validated on Ubuntu LTS + Windows Server + macOS (no GPU accel fallback noted)
+- [ ] nvidia-smi works in host and in Docker containers
+- [ ] Doc: troubleshooting playbook","infra,gpu,automation",P0,EPIC: Program charter & architecture blueprint,M1
+Container base images with CUDA & OpenCL,Container base images with CUDA & OpenCL,"Build minimal base images for Python and Node with CUDA, cuDNN, and common build deps (torch, transformers optional) using multi-stage Dockerfiles.","- [ ] /containers/base/Dockerfile.{node,python}.cuda
+- [ ] GHCR publish workflow with tags (cuda-12.x)
+- [ ] Runtime image < 3GB, build < 7GB
+- [ ] SBOM generated and signed (cosign)","containers,gpu,supplychain",P1,Provisioner: NVIDIA drivers + CUDA + container runtime,M1
+Implement MCP server shell,Implement MCP server shell,"Implement a minimal MCP-compatible server that exposes tools/resources for the agent runner. Provide health, version, and capabilities endpoints.","- [ ] /apps/mcp-server with HTTP + JSON-RPC (per spec) and OpenAPI doc
+- [ ] Healthz, readyz, /capabilities endpoints
+- [ ] Integration test validating MCP handshake
+- [ ] Containerized and published via CI","mcp,backend",P0,Scaffold monorepo with polyglot workspaces,M1
+Agent runner service (task graph + retries),Agent runner service (task graph + retries),"Build an agent runner that accepts tasks, composes tool calls, handles retries/backoff, and supports parallel branches in a DAG with checkpoints.","- [ ] /apps/agent-runner with task graph engine + durable state store
+- [ ] Idempotent retries with exponential backoff + jitter
+- [ ] Checkpointing (local + Redis/Postgres backends)
+- [ ] Unit + integration tests covering retry/failure semantics","agents,orchestration",P0,Implement MCP server shell,M1
+Task queue & scheduler,Task queue & scheduler,Introduce a queue (Redis or RabbitMQ) for agent tasks and a scheduler that respects GPU/CPU resources and priority lanes.,"- [ ] /apps/scheduler integrates with Redis/RabbitMQ
+- [ ] Priority queues (P0..P3) + fair scheduling
+- [ ] GPU-aware placement (NVIDIA visible devices)
+- [ ] Load tests to 1k concurrent tasks with no data loss","queue,scalability,performance",P1,Agent runner service (task graph + retries),M1
+Adapter: Local via vLLM/Ollama/TGI,Adapter: Local via vLLM/Ollama/TGI,"Create a unified local-model adapter supporting vLLM and Ollama (and optional TGI). Provide spec: chat, completion, tools, batch, streaming, vision if available.","- [ ] /packages/adapters/local with provider drivers (vllm, ollama, tgi)
+- [ ] Configurable models via YAML + hot-reload
+- [ ] Benchmarks (tokens/s, latency) saved to /reports/
+- [ ] Fallback on provider outage surfaced to router","models,adapters,local",P0,Agent runner service (task graph + retries),M2
+Adapter: OpenAI (GPT‑4.1/4o family),Adapter: OpenAI (GPT‑4.1/4o family),"Implement cloud adapter for OpenAI chat/completions, tool use, batch, and structured outputs. Cost tracking per request.","- [ ] /packages/adapters/openai with retry/backoff and rate-limit handling
+- [ ] Supports tool calls & JSON mode
+- [ ] Emits cost metrics (input/output tokens × price) to Prometheus
+- [ ] Contract tests with wiremock/vcrpy","models,adapters,cloud",P1,Adapter: Local via vLLM/Ollama/TGI,M2
+Adapter: Anthropic (Claude family),Adapter: Anthropic (Claude family),"Implement Anthropic adapter with tools, system prompts, and thinking tokens if applicable. Include streaming and partials.","- [ ] /packages/adapters/anthropic with robust error mapping
+- [ ] Supports tool use, system prompts, and streaming deltas
+- [ ] Emits cost metrics and latency histograms
+- [ ] Contract tests recorded and replayed","models,adapters,cloud",P1,Adapter: Local via vLLM/Ollama/TGI,M2
+Adapter: Azure OpenAI,Adapter: Azure OpenAI,"Add Azure OpenAI adapter (deployment-name routing, regional failover) and identity via workload identity/OIDC.","- [ ] /packages/adapters/azureopenai with API version pinning
+- [ ] OIDC auth for CI/agents (no static keys)
+- [ ] Regional fallback config
+- [ ] Integration tests in CI (recorded)","models,adapters,cloud,azure",P2,Adapter: OpenAI (GPT‑4.1/4o family),M2
+Policy engine for routing and fallback,Policy engine for routing and fallback,"Implement a policy engine that selects a primary model and fallback chain based on task type, cost cap, latency SLO, context length, eval score history, and availability.","- [ ] /packages/router with pluggable policies (YAML/JSON)
+- [ ] Inputs: task metadata, history, SLAs, cost budget
+- [ ] Outputs: (provider, model, params, fallback list)
+- [ ] Unit tests + scenario tests (cost caps, outages)","router,cost,availability",P0,Adapter: Local via vLLM/Ollama/TGI; Adapter: OpenAI (GPT‑4.1/4o family); Adapter: Anthropic (Claude family),M2
+Canary + shadow routing for model experiments,Canary + shadow routing for model experiments,Add canary percentage and shadow-mode (duplicate requests) to compare candidate models with the primary in real time without impacting users.,"- [ ] Configurable canary fraction per task type
+- [ ] Shadow traffic with response capture (no user impact)
+- [ ] Dashboard charts for win-rate/latency/cost deltas
+- [ ] Kill switch and auto-rollback on regression","experimentation,router,observability",P1,Policy engine for routing and fallback,M3
+Prompt/Tooling registry with versioning,Prompt/Tooling registry with versioning,Centralize prompt templates and tool schemas with semantic versions and changelogs. Include diff view and rollout controls.,"- [ ] /packages/registry storing prompts/tools with semver
+- [ ] CLI: prompt publish/promote/rollback
+- [ ] Provenance metadata (author, reason, eval links)
+- [ ] Tests to ensure backward compatibility","prompts,registry,governance",P2,Policy engine for routing and fallback,M3
+"CI: Build, lint, type-check, unit tests","CI: Build, lint, type-check, unit tests","GitHub Actions workflow to lint, type-check, and run unit tests across workspaces with matrix (OS: ubuntu, windows, macos).","- [ ] .github/workflows/ci.yml with caching (pnpm, pip, Docker layers)
+- [ ] Matrix: ubuntu-latest, windows-latest, macos-latest
+- [ ] Artifacts: coverage reports + SBOM
+- [ ] Status checks required for merge","ci,quality",P0,Set coding standards & pre-commit hooks,M1
+CD: Containers to GHCR + versioned Helm chart,CD: Containers to GHCR + versioned Helm chart,Publish images to GHCR and package Helm chart for deploy to k8s clusters. Automate semantic-release tagging.,"- [ ] .github/workflows/cd.yml pushes images on main + tags
+- [ ] /infra/helm/mcp-stack chart with values.yaml
+- [ ] Helm chart published as artifact + OCI registry
+- [ ] smoke tests after deploy","cd,helm,containers",P1,"CI: Build, lint, type-check, unit tests; Container base images with CUDA & OpenCL",M2
+"Environments: dev, staging, prod with gates","Environments: dev, staging, prod with gates","Define three environments with promotion approvals, artifact immutability, and rollback strategy.","- [ ] GitHub Environments with secrets/vars separated
+- [ ] Manual approval gate on staging→prod
+- [ ] Blue/green or canary rollout strategy documented
+- [ ] Rollback runbook in /docs/runbooks/rollback.md","release,governance",P1,CD: Containers to GHCR + versioned Helm chart,M2
+Terraform: base networking + k8s cluster,Terraform: base networking + k8s cluster,"Provide TF modules to stand up a GPU-capable k8s (AKS/EKS/k3s/on-prem) cluster and VNet/subnets, with optional node pools for GPU.","- [ ] /infra/terraform/modules/{network,cluster}
+- [ ] Variants: cloud + on-prem (k3s) docs
+- [ ] Outputs consumed by Helm pipeline
+- [ ] Example stack under /infra/stacks/dev","terraform,k8s,infra",P1,CD: Containers to GHCR + versioned Helm chart,M2
+Secrets: OIDC + external secret store,Secrets: OIDC + external secret store,Configure OIDC for CI/CD and External Secrets Operator to pull from Vault/Key Vault/Secrets Manager; eliminate long-lived keys.,"- [ ] Workload identity configured (no PATs in CI)
+- [ ] ESO syncing secrets into k8s namespaces
+- [ ] Rotation policy + docs
+- [ ] Secret usage audit in repo","security,secrets,compliance",P0,"Environments: dev, staging, prod with gates; Terraform: base networking + k8s cluster",M2
+"Telemetry: Prometheus, OpenTelemetry, Grafana","Telemetry: Prometheus, OpenTelemetry, Grafana","Expose metrics (QPS, tokens, cost, latency P50/P95, error codes) and traces for agent runs and adapter calls. Dashboards + alerts.","- [ ] /infra/helm/observability stack
+- [ ] Metrics from router, adapters, runner
+- [ ] Grafana dashboards versioned in repo
+- [ ] Alert rules for SLO violations","observability,sre",P0,Agent runner service (task graph + retries); Policy engine for routing and fallback,M2
+Logging & redaction policy,Logging & redaction policy,Centralize JSON logging with PII redaction and request correlation IDs across services.,"- [ ] Shared logging lib in /packages/logging
+- [ ] Correlation ID middleware
+- [ ] PII redaction rules + tests
+- [ ] Ship to ELK/Cloud logging with retention policy","logging,privacy",P1,"Telemetry: Prometheus, OpenTelemetry, Grafana",M2
+Golden eval harness (task-based),Golden eval harness (task-based),"Build an evaluation harness with golden tasks for coding use cases (fix bug, write unit test, refactor). Track win rate, cost, and latency.","- [ ] /apps/eval-harness with task runners
+- [ ] Dataset under /eval/goldens with YAML
+- [ ] Reports in /reports/eval with trend lines
+- [ ] CI job to run nightly on main","evaluation,quality,benchmark",P0,Policy engine for routing and fallback; Adapter: Local via vLLM/Ollama/TGI,M3
+Safety & guardrails tests,Safety & guardrails tests,Add red-team prompts for unsafe content and ensure adapters/routers enforce policies; include jailbreak resistance checks.,"- [ ] /eval/safety with scenarios and expected blocks
+- [ ] Router policy denies/filters unsafe outputs
+- [ ] CI gate: safety score ≥ threshold
+- [ ] Docs: escalation and override process","safety,compliance,testing",P1,Golden eval harness (task-based),M3
+Load & soak tests for throughput/cost,Load & soak tests for throughput/cost,Generate concurrent load to validate throughput and measure cost under different routing policies.,"- [ ] k6/Locust scenario scripts under /tests/load
+- [ ] Target: 500 RPS mixed task profile
+- [ ] Cost telemetry exported per run
+- [ ] Report with bottleneck analysis","performance,cost",P2,"Telemetry: Prometheus, OpenTelemetry, Grafana",M3
+Budget enforcement & per-run spend caps,Budget enforcement & per-run spend caps,Implement budgets per environment and per project with hard/soft caps; block or downgrade to cheaper models when violated.,"- [ ] Router consults budget service before selection
+- [ ] Downgrade policy to cheaper model tiers
+- [ ] Alerts on 50/80/100% budget thresholds
+- [ ] Unit tests for edge cases","cost,governance",P0,"Policy engine for routing and fallback; Telemetry: Prometheus, OpenTelemetry, Grafana",M3
+Usage attribution & tagging,Usage attribution & tagging,Tag every request with project/owner/issue to attribute costs; export CSV/Parquet for finance.,"- [ ] Request context carries attribution tags
+- [ ] Exporters to S3/Blob/FS as CSV & Parquet
+- [ ] Daily rollups + retention
+- [ ] Docs for finance import","cost,reporting",P2,Budget enforcement & per-run spend caps,M3
+CLI for task submission & inspection,CLI for task submission & inspection,"Provide a cross-platform CLI to submit tasks, inspect runs, tail logs, and fetch artifacts.","- [ ] /apps/cli with commands (submit, status, logs, artifacts)
+- [ ] Works on Windows/Linux/macOS
+- [ ] Autocomplete + rich help
+- [ ] E2E tests in CI (matrix OS)","cli,dx",P1,Agent runner service (task graph + retries),M3
+REST/gRPC API gateway,REST/gRPC API gateway,Expose authenticated APIs for external callers. Include rate limits and audit logging.,"- [ ] /apps/api-gateway with OpenAPI + optional gRPC
+- [ ] JWT/OIDC auth, per-token quotas
+- [ ] Audit logs to central sink
+- [ ] Contract tests + fuzzing","api,security",P1,CLI for task submission & inspection; Secrets: OIDC + external secret store,M3
+Web dashboard (observability + control),Web dashboard (observability + control),"Build a minimal dashboard to monitor tasks, costs, and routing decisions; allow pausing models and changing canary %.","- [ ] /apps/dashboard (Next.js) with auth
+- [ ] Live charts from Prometheus/Grafana/API
+- [ ] Controls for canary %, kill-switch, queue purge
+- [ ] Accessibility checks pass","ui,observability,governance",P2,"Telemetry: Prometheus, OpenTelemetry, Grafana; Policy engine for routing and fallback",M4
+MCP tool: GitHub (gh) operations,MCP tool: GitHub (gh) operations,"Provide tool bindings for gh CLI to create issues/PRs, comment, and manage labels/milestones securely from the agent.","- [ ] Tool schema + permission scopes
+- [ ] Dry-run mode + audit trail
+- [ ] Unit + sandbox integration tests
+- [ ] Rate-limit/backoff handling","mcp,github,automation",P1,Implement MCP server shell,M3
+MCP tool: Filesystem + repo edit,MCP tool: Filesystem + repo edit,"Safe file read/write, patch application, and code search (ripgrep) with guardrails.","- [ ] Patch format enforced (unified diffs)
+- [ ] Denylist & allowlist paths
+- [ ] Large-file protection and streaming reads
+- [ ] Tests for rollback on patch fail","mcp,filesystem,safety",P1,Implement MCP server shell,M3
+MCP tool: Test runner (xUnit/Jest/Pytest),MCP tool: Test runner (xUnit/Jest/Pytest),Allow the agent to run tests and collect coverage reports across languages.,"- [ ] Tool to invoke language-specific runners
+- [ ] Coverage merged and exported to artifacts
+- [ ] Timeouts and flake retry policy
+- [ ] CI parity with local behavior","mcp,testing",P2,MCP tool: Filesystem + repo edit,M3
+Vector cache & retrieval (optional),Vector cache & retrieval (optional),Add optional vector store for RAG (local pgvector/Chroma). Use for codebase and docs retrieval.,"- [ ] /packages/retrieval with embeddings adapters
+- [ ] Ingestion pipeline with chunking strategies
+- [ ] Benchmarked recall for repos/docs
+- [ ] Toggle via config","retrieval,optional",P3,Adapter: Local via vLLM/Ollama/TGI,M4
+Artifact storage & retention,Artifact storage & retention,"Store run artifacts (diffs, test reports, logs) with retention and signed provenance.","- [ ] Pluggable backends (S3/Blob/FS)
+- [ ] Retention policy + lifecycle rules
+- [ ] Provenance: who/what/when
+- [ ] CLI to fetch by run/task","artifacts,governance",P2,CLI for task submission & inspection,M3
+Chaos & failure injection,Chaos & failure injection,"Inject failures (adapter timeouts, 429s, GPU OOM, queue partitions) to ensure graceful degradation and fallback.","- [ ] Failure injectors toggled via env/config
+- [ ] Scenario tests verifying fallback works
+- [ ] Postmortem template in /docs/postmortems
+- [ ] Weekly chaos job in CI","resilience,testing",P2,Policy engine for routing and fallback; Task queue & scheduler,M4
+Disaster recovery runbook & backups,Disaster recovery runbook & backups,Document and automate backups for state stores (Redis/Postgres/artifacts) and restore drills.,"- [ ] Automated backups configured and tested
+- [ ] Restore drill documented with timing
+- [ ] RPO/RTO stated and met
+- [ ] Quarterly test schedule","sre,reliability",P2,Artifact storage & retention,M4
+Threat model & hardening,Threat model & hardening,"Perform a threat model (STRIDE) and implement hardening: minimal perms, network policies, and image scanning.","- [ ] Threat model doc in /docs/security
+- [ ] NetworkPolicies for k8s namespaces
+- [ ] Image scan gate in CI (severity threshold)
+- [ ] SAST/DAST pipelines","security,compliance",P1,Secrets: OIDC + external secret store; REST/gRPC API gateway,M3
+Policy: data handling & retention,Policy: data handling & retention,Define retention for logs/artifacts and controls for sensitive data; ensure regional data boundaries if needed.,"- [ ] Data classification policy
+- [ ] Retention periods enforced
+- [ ] Regional boundary configuration
+- [ ] Audit evidence collected","privacy,governance",P2,Logging & redaction policy; Artifact storage & retention,M4
+End‑to‑end example: ‘Fix failing unit test’,End‑to‑end example: ‘Fix failing unit test’,"Provide a full example task where the agent reproduces a failing unit test, proposes a change, runs tests, and opens a PR with artifacts.","- [ ] /examples/fix-test with sample repo
+- [ ] Recorded run with artifacts
+- [ ] Tutorial doc with screenshots
+- [ ] Works with local and cloud models","docs,examples,dx",P2,MCP tool: GitHub (gh) operations; MCP tool: Test runner (xUnit/Jest/Pytest),M4
+Operator handbook & quickstarts,Operator handbook & quickstarts,"Create ops docs: install on dedicated hardware, configure adapters, set routing/fallback, and verify with smoke tests.","- [ ] /docs/operators handbook with checklists
+- [ ] Quickstart: local‑only; cloud‑only; hybrid
+- [ ] Troubleshooting FAQ
+- [ ] Smoke test script referenced","docs,ops",P2,Provisioner: NVIDIA drivers + CUDA + container runtime; CD: Containers to GHCR + versioned Helm chart,M4

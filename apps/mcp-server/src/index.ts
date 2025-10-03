@@ -1,9 +1,8 @@
-import express, { type Request, type Response } from 'express';
+import express, { type Request, type Response, type Express } from 'express';
 import { Server } from 'jayson';
-import { z } from 'zod';
 
-const app = express();
-const PORT = process.env.PORT || 3000;
+const app: Express = express();
+const PORT = process.env['PORT'] || 3000;
 
 app.use(express.json());
 

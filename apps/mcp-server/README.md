@@ -13,6 +13,30 @@ Model Context Protocol (MCP) server for the Jesus AI agent orchestration platfor
   - `prompts/list`: List available prompts
   - `tools/list`: List available tools
 
+## Implemented Tools
+
+### Filesystem Tools
+- **read_file**: Read file contents with size limits and encoding support
+- **write_file**: Write files with safety checks and backup options
+- **apply_patch**: Apply unified diff patches to files
+- **search_files**: Search for patterns in files with glob support
+
+### GitHub Tools (via gh CLI)
+- **create_issue**: Create GitHub issues
+- **update_issue**: Update issue title, body, state
+- **create_comment**: Add comments to issues/PRs
+- **list_issues**: List and filter repository issues
+- **create_pull_request**: Create PRs from branches
+- **manage_labels**: Add/remove labels from issues/PRs
+- Includes audit logging and dry-run mode for safety
+
+### Test Runner Tools
+- **run_tests**: Execute tests with multiple frameworks (vitest, jest, pytest, go test)
+- **get_coverage**: Generate test coverage reports
+- Supports timeout controls, retries, and working directory configuration
+
+> **Note**: Tool implementations are available in `src/tools/` but not yet wired to RPC endpoints. Integration is planned for a future release.
+
 ## Development
 
 ```bash
