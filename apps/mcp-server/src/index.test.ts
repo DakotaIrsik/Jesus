@@ -4,7 +4,7 @@ import { app, server } from './index';
 
 describe('MCP Server', () => {
   afterAll(() => {
-    server.close();
+    server?.close();
   });
 
   describe('Health Endpoints', () => {

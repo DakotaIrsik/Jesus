@@ -1,9 +1,12 @@
-import express, { type Request, type Response } from 'express';
+import express, { type Request, type Response, type Express } from 'express';
 import { Server } from 'jayson';
-import { z } from 'zod';
+// Tool implementations are available but not yet wired to RPC endpoints
+// import { createFilesystemTool } from './tools/filesystem/index.js';
+// import { createGitHubTool } from './tools/github/index.js';
+// import { createTestRunnerTool } from './tools/testrunner/index.js';
 
-const app = express();
-const PORT = process.env.PORT || 3000;
+const app: Express = express();
+const PORT = process.env['PORT'] || 3000;
 
 app.use(express.json());
 
@@ -77,21 +80,26 @@ app.post('/rpc', (req: Request, res: Response) => {
   });
 });
 
-const server = app.listen(PORT, () => {
-  console.log(`MCP Server running on port ${PORT}`);
-  console.log(`Health check: http://localhost:${PORT}/healthz`);
-  console.log(`Readiness check: http://localhost:${PORT}/readyz`);
-  console.log(`Capabilities: http://localhost:${PORT}/capabilities`);
-  console.log(`JSON-RPC endpoint: http://localhost:${PORT}/rpc`);
-});
+// Only start server if not in test mode
+let server: ReturnType<typeof app.listen> | undefined;
 
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  console.log('SIGTERM received, shutting down gracefully');
-  server.close(() => {
-    console.log('Server closed');
-    process.exit(0);
+if (process.env['NODE_ENV'] !== 'test' && !process.env['VITEST']) {
+  server = app.listen(PORT, () => {
+    console.log(`MCP Server running on port ${PORT}`);
+    console.log(`Health check: http://localhost:${PORT}/healthz`);
+    console.log(`Readiness check: http://localhost:${PORT}/readyz`);
+    console.log(`Capabilities: http://localhost:${PORT}/capabilities`);
+    console.log(`JSON-RPC endpoint: http://localhost:${PORT}/rpc`);
   });
-});
+
+  // Graceful shutdown
+  process.on('SIGTERM', () => {
+    console.log('SIGTERM received, shutting down gracefully');
+    server?.close(() => {
+      console.log('Server closed');
+      process.exit(0);
+    });
+  });
+}
 
 export { app, server };
