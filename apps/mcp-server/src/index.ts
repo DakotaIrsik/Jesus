@@ -315,21 +315,26 @@ app.post('/rpc', (req: Request, res: Response) => {
   });
 });
 
-const server = app.listen(PORT, () => {
-  console.log(`MCP Server running on port ${PORT}`);
-  console.log(`Health check: http://localhost:${PORT}/healthz`);
-  console.log(`Readiness check: http://localhost:${PORT}/readyz`);
-  console.log(`Capabilities: http://localhost:${PORT}/capabilities`);
-  console.log(`JSON-RPC endpoint: http://localhost:${PORT}/rpc`);
-});
+// Only start server if not in test mode
+let server: ReturnType<typeof app.listen> | undefined;
 
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  console.log('SIGTERM received, shutting down gracefully');
-  server.close(() => {
-    console.log('Server closed');
-    process.exit(0);
+if (process.env['NODE_ENV'] !== 'test' && !process.env['VITEST']) {
+  server = app.listen(PORT, () => {
+    console.log(`MCP Server running on port ${PORT}`);
+    console.log(`Health check: http://localhost:${PORT}/healthz`);
+    console.log(`Readiness check: http://localhost:${PORT}/readyz`);
+    console.log(`Capabilities: http://localhost:${PORT}/capabilities`);
+    console.log(`JSON-RPC endpoint: http://localhost:${PORT}/rpc`);
   });
-});
+
+  // Graceful shutdown
+  process.on('SIGTERM', () => {
+    console.log('SIGTERM received, shutting down gracefully');
+    server?.close(() => {
+      console.log('Server closed');
+      process.exit(0);
+    });
+  });
+}
 
 export { app, server };
