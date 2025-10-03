@@ -1,0 +1,62 @@
+graph TB
+    subgraph "Jesus AI Platform"
+        Platform[Jesus Platform<br/>AI Agent Orchestration]
+    end
+
+    subgraph "External Users"
+        DevUser[Developer<br/>Task Submission]
+        OpsUser[Operator<br/>Monitoring & Config]
+        AgentUser[AI Agent<br/>Task Execution]
+    end
+
+    subgraph "Model Providers"
+        Anthropic[Anthropic API<br/>Claude Models]
+        OpenAI[OpenAI API<br/>GPT-4 Models]
+        LocalModel[Local Models<br/>llama.cpp/vLLM]
+    end
+
+    subgraph "External Services"
+        GitHub[GitHub<br/>Repository Operations]
+        OIDC[Identity Provider<br/>OIDC Auth]
+        SecretStore[Secret Store<br/>Vault/AWS Secrets]
+        ObjectStore[Object Storage<br/>S3-compatible]
+    end
+
+    subgraph "Observability Stack"
+        Prometheus[Prometheus<br/>Metrics]
+        Grafana[Grafana<br/>Dashboards]
+        ELK[ELK/Cloud Logging<br/>Centralized Logs]
+    end
+
+    %% User Interactions
+    DevUser -->|Submit Tasks| Platform
+    DevUser -->|Query Status| Platform
+    OpsUser -->|Configure| Platform
+    OpsUser -->|Monitor| Grafana
+    AgentUser -->|Execute via MCP| Platform
+
+    %% Model Provider Connections
+    Platform -->|API Calls| Anthropic
+    Platform -->|API Calls| OpenAI
+    Platform -->|Local Inference| LocalModel
+
+    %% External Service Connections
+    Platform -->|Repository Operations| GitHub
+    Platform -->|Authentication| OIDC
+    Platform -->|Fetch Secrets| SecretStore
+    Platform -->|Store Artifacts| ObjectStore
+
+    %% Observability Connections
+    Platform -->|Metrics| Prometheus
+    Platform -->|Logs| ELK
+    Prometheus -->|Data Source| Grafana
+
+    classDef platform fill:#4A90E2,stroke:#2E5C8A,color:#fff
+    classDef external fill:#F5A623,stroke:#D68910,color:#fff
+    classDef user fill:#7ED321,stroke:#5FA019,color:#fff
+    classDef observability fill:#BD10E0,stroke:#9012FE,color:#fff
+
+    class Platform platform
+    class Anthropic,OpenAI,LocalModel,GitHub,OIDC,SecretStore,ObjectStore external
+    class DevUser,OpsUser,AgentUser user
+    class Prometheus,Grafana,ELK observability

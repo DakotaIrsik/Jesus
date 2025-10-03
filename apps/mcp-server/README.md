@@ -7,11 +7,17 @@ Model Context Protocol (MCP) server for the Jesus AI agent orchestration platfor
 - **JSON-RPC 2.0**: Standard MCP protocol implementation
 - **Health Checks**: `/healthz` and `/readyz` endpoints for Kubernetes
 - **Capabilities**: Exposes server capabilities via `/capabilities` endpoint
+- **Filesystem Tools**: Secure file operations with path protection and size limits
+  - `filesystem.read`: Read file contents
+  - `filesystem.write`: Write files with directory creation
+  - `filesystem.patch`: Apply unified diff patches with rollback
+  - `filesystem.search`: Search code with regex (ripgrep-like)
 - **MCP Methods**:
   - `initialize`: Server initialization and capability negotiation
   - `resources/list`: List available resources
   - `prompts/list`: List available prompts
   - `tools/list`: List available tools
+  - `tools/call`: Execute filesystem tools
 
 ## Development
 
@@ -52,6 +58,10 @@ docker run -p 3000:3000 jesus/mcp-server:latest
 ## Environment Variables
 
 - `PORT` - Server port (default: 3000)
+- `ALLOWED_PATHS` - Comma-separated list of allowed file paths (default: empty, allows all)
+- `DENIED_PATHS` - Comma-separated list of denied paths (default: `/etc,/usr/bin,/System`)
+- `MAX_FILE_SIZE` - Maximum file size in bytes (default: 10485760 = 10MB)
+- `STREAM_THRESHOLD` - File size threshold for streaming in bytes (default: 1048576 = 1MB)
 
 ## MCP Protocol
 

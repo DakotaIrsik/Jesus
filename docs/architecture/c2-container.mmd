@@ -1,0 +1,112 @@
+graph TB
+    subgraph "Client Layer"
+        CLI[CLI Tool<br/>Task Submission]
+        WebDash[Web Dashboard<br/>Monitoring UI]
+        APIClient[API Clients<br/>REST/gRPC]
+    end
+
+    subgraph "Jesus Platform"
+        subgraph "API Gateway"
+            Gateway[API Gateway<br/>REST/gRPC<br/>Authentication]
+        end
+
+        subgraph "Core Services"
+            Router[Model Router<br/>Routing Logic<br/>Fallback Chains]
+            Runner[Agent Runner<br/>Task Execution<br/>Retry Logic]
+            Scheduler[Task Scheduler<br/>Queue Management<br/>GPU-Aware]
+        end
+
+        subgraph "Model Adapters"
+            AnthropicAdapter[Anthropic Adapter<br/>Claude API]
+            OpenAIAdapter[OpenAI Adapter<br/>GPT-4 API]
+            LocalAdapter[Local Adapter<br/>llama.cpp/vLLM]
+        end
+
+        subgraph "MCP Server"
+            MCPServer[MCP Server<br/>JSON-RPC 2.0<br/>Tool Registry]
+            FSTools[Filesystem Tools<br/>Read/Write/Search]
+            GHTools[GitHub Tools<br/>Issues/PRs/Labels]
+            TestTools[Test Runner<br/>Jest/Pytest/xUnit]
+        end
+
+        subgraph "Support Services"
+            BudgetSvc[Budget Service<br/>Cost Tracking<br/>Spend Caps]
+            ArtifactSvc[Artifact Service<br/>Storage/Retrieval]
+            LogSvc[Logging Service<br/>Correlation IDs<br/>PII Redaction]
+        end
+    end
+
+    subgraph "Data Stores"
+        TaskQueue[(Task Queue<br/>Redis/RabbitMQ)]
+        MetaDB[(Metadata DB<br/>PostgreSQL)]
+        ArtifactStore[(Artifact Store<br/>S3-compatible)]
+    end
+
+    subgraph "External Systems"
+        ModelAPIs[Model Provider APIs]
+        GitHub[GitHub API]
+        Observability[Prometheus/Grafana/ELK]
+        SecretMgmt[Secret Management]
+    end
+
+    %% Client to Gateway
+    CLI --> Gateway
+    WebDash --> Gateway
+    APIClient --> Gateway
+
+    %% Gateway to Core
+    Gateway --> Router
+    Gateway --> Scheduler
+    Gateway --> BudgetSvc
+
+    %% Core Service Flow
+    Scheduler --> TaskQueue
+    TaskQueue --> Runner
+    Runner --> Router
+    Router --> AnthropicAdapter
+    Router --> OpenAIAdapter
+    Router --> LocalAdapter
+
+    %% Runner to MCP
+    Runner --> MCPServer
+    MCPServer --> FSTools
+    MCPServer --> GHTools
+    MCPServer --> TestTools
+
+    %% Runner to Support Services
+    Runner --> ArtifactSvc
+    Runner --> LogSvc
+    Runner --> BudgetSvc
+
+    %% Data Store Connections
+    Scheduler --> MetaDB
+    Runner --> MetaDB
+    ArtifactSvc --> ArtifactStore
+    BudgetSvc --> MetaDB
+
+    %% External Connections
+    AnthropicAdapter --> ModelAPIs
+    OpenAIAdapter --> ModelAPIs
+    LocalAdapter --> ModelAPIs
+    GHTools --> GitHub
+    Gateway --> SecretMgmt
+    LogSvc --> Observability
+    BudgetSvc --> Observability
+
+    classDef client fill:#7ED321,stroke:#5FA019,color:#fff
+    classDef api fill:#4A90E2,stroke:#2E5C8A,color:#fff
+    classDef core fill:#F5A623,stroke:#D68910,color:#fff
+    classDef adapter fill:#50E3C2,stroke:#35C9A8,color:#000
+    classDef mcp fill:#B8E986,stroke:#9DD663,color:#000
+    classDef support fill:#BD10E0,stroke:#9012FE,color:#fff
+    classDef data fill:#D0021B,stroke:#A00116,color:#fff
+    classDef external fill:#8B572A,stroke:#704626,color:#fff
+
+    class CLI,WebDash,APIClient client
+    class Gateway api
+    class Router,Runner,Scheduler core
+    class AnthropicAdapter,OpenAIAdapter,LocalAdapter adapter
+    class MCPServer,FSTools,GHTools,TestTools mcp
+    class BudgetSvc,ArtifactSvc,LogSvc support
+    class TaskQueue,MetaDB,ArtifactStore data
+    class ModelAPIs,GitHub,Observability,SecretMgmt external
